@@ -4,6 +4,7 @@ import type { ApplicationStatus, EmploymentApplication } from '../../types/appli
 interface CalendarViewProps {
   applications: EmploymentApplication[]
   onView: (item: EmploymentApplication) => void
+  onCreateForDate?: (dateKey: string) => void
 }
 
 const WEEKDAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
@@ -21,7 +22,7 @@ const toKey = (date: Date) =>
   `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 
 /** Calendario mensual con las postulaciones ubicadas en su fecha de aplicación. */
-export default function CalendarView({ applications, onView }: CalendarViewProps) {
+export default function CalendarView({ applications, onView, onCreateForDate }: CalendarViewProps) {
   const [cursor, setCursor] = useState(() => {
     const now = new Date()
     return new Date(now.getFullYear(), now.getMonth(), 1)
@@ -80,24 +81,38 @@ export default function CalendarView({ applications, onView }: CalendarViewProps
               const items = byDate.get(key) ?? []
               const inMonth = date.getMonth() === month
               const isToday = key === todayKey
+              const clickable = inMonth && Boolean(onCreateForDate)
               return (
                 <div
                   key={key}
-                  className={`flex min-h-[104px] flex-col rounded-2xl border p-2 transition ${
+                  onClick={clickable ? () => onCreateForDate?.(key) : undefined}
+                  role={clickable ? 'button' : undefined}
+                  title={clickable ? 'Agregar postulación en esta fecha' : undefined}
+                  className={`group flex min-h-[104px] flex-col rounded-2xl border p-2 transition ${
                     inMonth
                       ? 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-slate-950/85'
                       : 'border-transparent bg-slate-100/40 text-slate-400 dark:bg-white/5 dark:text-slate-600'
-                  } ${isToday ? 'ring-2 ring-violet-400 dark:ring-violet-500/60' : ''}`}
+                  } ${isToday ? 'ring-2 ring-violet-400 dark:ring-violet-500/60' : ''} ${
+                    clickable ? 'cursor-pointer hover:border-violet-300 hover:bg-white dark:hover:border-violet-400/40 dark:hover:bg-slate-900' : ''
+                  }`}
                 >
-                  <span className={`text-xs font-semibold ${isToday ? 'text-violet-600 dark:text-violet-300' : inMonth ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'}`}>
-                    {date.getDate()}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-xs font-semibold ${isToday ? 'text-violet-600 dark:text-violet-300' : inMonth ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-600'}`}>
+                      {date.getDate()}
+                    </span>
+                    {clickable ? (
+                      <span className="text-sm font-bold leading-none text-violet-400 opacity-0 transition group-hover:opacity-100" aria-hidden>+</span>
+                    ) : null}
+                  </div>
                   <div className="mt-1 space-y-1">
                     {items.map((item) => (
                       <button
                         key={item.id}
                         type="button"
-                        onClick={() => onView(item)}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          onView(item)
+                        }}
                         title={`${item.position} · ${item.company} · ${item.status}`}
                         className="flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-1.5 py-1 text-left text-[11px] font-medium text-slate-700 transition hover:border-violet-300 hover:bg-violet-50 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:border-violet-400/40 dark:hover:bg-white/10"
                       >

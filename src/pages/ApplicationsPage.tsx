@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { EmploymentApplication, EmploymentApplicationDraft } from '../types/application'
 import { applicationService } from '../services/applicationService'
 import { Eyebrow, panelClass } from '../components/ui'
@@ -28,7 +28,7 @@ const emptyDraft: EmploymentApplicationDraft = {
 }
 
 export default function ApplicationsPage() {
-  const [applications, setApplications] = useState<EmploymentApplication[]>([])
+  const [applications, setApplications] = useState<EmploymentApplication[]>(() => applicationService.list())
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [mode, setMode] = useState<DrawerMode>('create')
@@ -36,10 +36,6 @@ export default function ApplicationsPage() {
   const [draft, setDraft] = useState<EmploymentApplicationDraft>(emptyDraft)
 
   const refresh = () => setApplications(applicationService.list())
-
-  useEffect(() => {
-    refresh()
-  }, [])
 
   const selectedApplication = useMemo(
     () => applications.find((item) => item.id === selectedId) ?? null,
@@ -92,6 +88,13 @@ export default function ApplicationsPage() {
     setDrawerOpen(true)
   }
 
+  const openCreateForDate = (dateKey: string) => {
+    setMode('create')
+    setSelectedId(null)
+    setDraft({ ...emptyDraft, appliedDate: dateKey })
+    setDrawerOpen(true)
+  }
+
   const save = () => {
     if (mode === 'edit' && selectedId) {
       applicationService.update(selectedId, draft)
@@ -130,7 +133,7 @@ export default function ApplicationsPage() {
           <ViewSwitcher value={viewMode} onChange={setViewMode} />
         </div>
 
-        {viewMode === 'calendar' && <CalendarView applications={sortedApplications} onView={openView} />}
+        {viewMode === 'calendar' && <CalendarView applications={sortedApplications} onView={openView} onCreateForDate={openCreateForDate} />}
         {viewMode === 'kanban' && <KanbanView applications={sortedApplications} onView={openView} onEdit={openEdit} />}
         {viewMode === 'table' && <TableView applications={sortedApplications} onView={openView} onEdit={openEdit} onRemove={remove} />}
       </motion.div>
