@@ -1,13 +1,20 @@
-import type { CVDocument, CVDraft } from '../types/cv'
+import type { CVDocument, CVDraft, CVVersion } from '../types/cv'
 
 export interface CVService {
   get(): CVDocument
   save(data: CVDraft): CVDocument
   uploadPdf(file: File): Promise<CVDocument>
   clearPdf(): CVDocument
+  listVersions(): CVVersion[]
+  saveVersion(label?: string): CVVersion
+  restoreVersion(id: string): CVDocument | null
+  deleteVersion(id: string): CVVersion[]
+  renameVersion(id: string, label: string): CVVersion[]
 }
 
 const STORAGE_KEY = 'revijob-cv'
+const VERSIONS_KEY = 'revijob-cv-versions'
+const MAX_VERSIONS = 30
 
 function createId(): string {
   return `cv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -190,6 +197,67 @@ class LocalStorageCVService implements CVService {
     }
     this.write(next)
     return next
+  }
+
+  private readVersions(): CVVersion[] {
+    const raw = localStorage.getItem(VERSIONS_KEY)
+    if (!raw) return []
+    try {
+      const parsed = JSON.parse(raw) as CVVersion[]
+      return Array.isArray(parsed) ? parsed : []
+    } catch {
+      return []
+    }
+  }
+
+  private writeVersions(versions: CVVersion[]): void {
+    localStorage.setItem(VERSIONS_KEY, JSON.stringify(versions))
+  }
+
+  listVersions(): CVVersion[] {
+    return this.readVersions()
+  }
+
+  saveVersion(label?: string): CVVersion {
+    const current = this.read()
+    const now = new Date()
+    const version: CVVersion = {
+      id: `ver-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      label: label?.trim() || `Versión ${now.toLocaleString()}`,
+      createdAt: now.toISOString(),
+      // Copia profunda para que la versión no cambie al editar el CV actual.
+      document: JSON.parse(JSON.stringify(current)) as CVDocument,
+    }
+
+    const versions = [version, ...this.readVersions()].slice(0, MAX_VERSIONS)
+    this.writeVersions(versions)
+    return version
+  }
+
+  restoreVersion(id: string): CVDocument | null {
+    const version = this.readVersions().find((item) => item.id === id)
+    if (!version) return null
+
+    const restored: CVDocument = {
+      ...JSON.parse(JSON.stringify(version.document)) as CVDocument,
+      updatedAt: new Date().toISOString(),
+    }
+    this.write(restored)
+    return restored
+  }
+
+  deleteVersion(id: string): CVVersion[] {
+    const versions = this.readVersions().filter((item) => item.id !== id)
+    this.writeVersions(versions)
+    return versions
+  }
+
+  renameVersion(id: string, label: string): CVVersion[] {
+    const versions = this.readVersions().map((item) =>
+      item.id === id ? { ...item, label: label.trim() || item.label } : item,
+    )
+    this.writeVersions(versions)
+    return versions
   }
 }
 

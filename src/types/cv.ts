@@ -42,6 +42,13 @@ export interface CVDocument {
   updatedAt: string
 }
 
+export interface CVVersion {
+  id: string
+  label: string
+  createdAt: string
+  document: CVDocument
+}
+
 export interface CVDraft {
   fullName: string
   headline: string
