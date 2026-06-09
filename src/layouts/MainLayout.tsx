@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
 import type { ReactNode } from 'react'
 import ThemeToggle from '../components/ThemeToggle'
+import AdSenseBanner from '../components/AdSenseBanner'
 
 const iconProps = {
   viewBox: '0 0 24 24',
@@ -138,8 +139,13 @@ export default function MainLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto  py-5">
+        <main className="flex-1 overflow-y-auto py-5">
           <Outlet />
+
+          {/* Banner publicitario (Google AdSense) al final del contenido */}
+          <div className="mx-auto mt-6 w-full max-w-7xl px-1">
+            <AdSenseBanner label="Banner inferior" />
+          </div>
         </main>
       </section>
     </div>
