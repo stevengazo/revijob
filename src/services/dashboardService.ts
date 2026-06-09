@@ -17,7 +17,7 @@ export interface DashboardStats {
   totalApplications: number
   cvVersions: number
   cvSkills: number
-  activeReminders: number
+  interviewCount: number
   acceptedCount: number
   byStatus: StatusCount[]
   byPlatform: CountItem[]
@@ -67,16 +67,11 @@ export function getDashboardStats(): DashboardStats {
     byMonth.push({ label: MONTH_LABELS[month.getMonth()], count })
   }
 
-  const activeReminders = apps.reduce(
-    (sum, app) => sum + (app.reminders?.filter((reminder) => !reminder.done).length ?? 0),
-    0,
-  )
-
   return {
     totalApplications: apps.length,
     cvVersions: versions.length,
     cvSkills: cv.skills.length,
-    activeReminders,
+    interviewCount: byStatus.find((item) => item.status === 'Entrevista')?.count ?? 0,
     acceptedCount: byStatus.find((item) => item.status === 'Aceptada')?.count ?? 0,
     byStatus,
     byPlatform,

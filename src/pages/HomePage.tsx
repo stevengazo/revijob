@@ -67,12 +67,12 @@ export default function HomePage() {
           }
         />
         <StatCard
-          label="Recordatorios"
-          value={stats.activeReminders}
-          hint="Pendientes por hacer"
+          label="Entrevistas"
+          value={stats.interviewCount}
+          hint="En etapa de entrevista"
           accent="text-amber-600 dark:text-amber-300"
           icon={
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2" strokeLinecap="round" /><circle cx="10" cy="7" r="4" /><path d="M21 8v6M18 11h6" strokeLinecap="round" /></svg>
           }
         />
         <StatCard

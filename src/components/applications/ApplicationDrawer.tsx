@@ -1,7 +1,8 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { useState } from 'react'
 import type { Dispatch, ReactNode, SetStateAction } from 'react'
 import { APPLICATION_STATUSES } from '../../types/application'
-import type { ApplicationStatus, EmploymentApplication, EmploymentApplicationDraft } from '../../types/application'
+import type { ApplicationStatus, EmploymentApplication, EmploymentApplicationDraft, EntryItem } from '../../types/application'
 import { Eyebrow, Field, PrimaryButton, fieldClass } from '../ui'
 
 export type DrawerMode = 'create' | 'edit' | 'view'
@@ -14,15 +15,28 @@ interface ApplicationDrawerProps {
   selectedApplication: EmploymentApplication | null
   onSave: () => void
   onClose: () => void
+  onAddComment: (text: string) => void
+  onRemoveComment: (commentId: string) => void
+  onAddNote: (text: string) => void
+  onRemoveNote: (noteId: string) => void
 }
 
 const titles: Record<DrawerMode, string> = { create: 'Agregar', edit: 'Editar', view: 'Detalle' }
 
-/** Convierte un textarea (una línea por entrada) en una lista de strings limpia. */
-const toLines = (value: string) => value.split('\n').map((line) => line.trim()).filter(Boolean)
-
 /** Panel lateral para crear, editar o ver el detalle de una postulación. */
-export default function ApplicationDrawer({ open, mode, draft, setDraft, selectedApplication, onSave, onClose }: ApplicationDrawerProps) {
+export default function ApplicationDrawer({
+  open,
+  mode,
+  draft,
+  setDraft,
+  selectedApplication,
+  onSave,
+  onClose,
+  onAddComment,
+  onRemoveComment,
+  onAddNote,
+  onRemoveNote,
+}: ApplicationDrawerProps) {
   const update = <K extends keyof EmploymentApplicationDraft>(key: K, value: EmploymentApplicationDraft[K]) =>
     setDraft((prev) => ({ ...prev, [key]: value }))
 
@@ -53,7 +67,13 @@ export default function ApplicationDrawer({ open, mode, draft, setDraft, selecte
             </div>
 
             {mode === 'view' && selectedApplication ? (
-              <ApplicationDetail application={selectedApplication} />
+              <ApplicationDetail
+                application={selectedApplication}
+                onAddComment={onAddComment}
+                onRemoveComment={onRemoveComment}
+                onAddNote={onAddNote}
+                onRemoveNote={onRemoveNote}
+              />
             ) : (
               <div className="mt-6 grid gap-4 text-slate-700 dark:text-slate-100">
                 <Field label="Empresa">
@@ -82,15 +102,7 @@ export default function ApplicationDrawer({ open, mode, draft, setDraft, selecte
                 <Field label="Salario">
                   <input value={draft.salary} onChange={(e) => update('salary', e.target.value)} className={fieldClass} />
                 </Field>
-                <Field label="Notas">
-                  <textarea value={draft.notes} onChange={(e) => update('notes', e.target.value)} rows={4} className={fieldClass} />
-                </Field>
-                <Field label="Comentarios (una línea por comentario)">
-                  <textarea value={draft.comments.join('\n')} onChange={(e) => update('comments', toLines(e.target.value))} rows={3} className={fieldClass} />
-                </Field>
-                <Field label="Recordatorios (uno por línea)">
-                  <textarea value={draft.reminders.join('\n')} onChange={(e) => update('reminders', toLines(e.target.value))} rows={3} className={fieldClass} />
-                </Field>
+                <p className="text-xs text-slate-400 dark:text-slate-500">Los comentarios y notas se gestionan desde el detalle una vez guardada la postulación.</p>
               </div>
             )}
 
@@ -122,11 +134,16 @@ const formatDate = (value: string) => {
   return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
 }
 
-/** Vista de solo lectura del detalle de una postulación. */
-function ApplicationDetail({ application }: { application: EmploymentApplication }) {
-  const comments = application.comments ?? []
-  const reminders = application.reminders ?? []
+interface ApplicationDetailProps {
+  application: EmploymentApplication
+  onAddComment: (text: string) => void
+  onRemoveComment: (commentId: string) => void
+  onAddNote: (text: string) => void
+  onRemoveNote: (noteId: string) => void
+}
 
+/** Detalle de una postulación con gestión de comentarios y notas. */
+function ApplicationDetail({ application, onAddComment, onRemoveComment, onAddNote, onRemoveNote }: ApplicationDetailProps) {
   return (
     <div className="mt-6 space-y-5">
       {/* Resumen */}
@@ -159,41 +176,92 @@ function ApplicationDetail({ application }: { application: EmploymentApplication
         </a>
       ) : null}
 
-      {application.notes ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/6">
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Notas</p>
-          <p className="mt-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-200">{application.notes}</p>
-        </div>
-      ) : null}
+      <EntrySection
+        title="Comentarios"
+        placeholder="Escribe un comentario…"
+        accent="bg-violet-600 hover:bg-violet-700"
+        items={Array.isArray(application.comments) ? application.comments : []}
+        onAdd={onAddComment}
+        onRemove={onRemoveComment}
+      />
 
-      <DetailList label="Comentarios" count={comments.length}>
-        {comments.length === 0 ? (
-          <EmptyHint>Sin comentarios.</EmptyHint>
-        ) : (
-          comments.map((entry) => (
-            <li key={entry.id} className="rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
-              <p>{entry.text}</p>
-              {entry.createdAt ? <p className="mt-1 text-xs text-slate-400">{entry.createdAt}</p> : null}
-            </li>
-          ))
-        )}
-      </DetailList>
+      <EntrySection
+        title="Notas"
+        placeholder="Añade una nota…"
+        accent="bg-sky-600 hover:bg-sky-700"
+        items={Array.isArray(application.notes) ? application.notes : []}
+        onAdd={onAddNote}
+        onRemove={onRemoveNote}
+      />
+    </div>
+  )
+}
 
-      <DetailList label="Recordatorios" count={reminders.length}>
-        {reminders.length === 0 ? (
-          <EmptyHint>Sin recordatorios.</EmptyHint>
+/** Sección con lista de entradas y un campo para añadir nuevas. */
+function EntrySection({
+  title,
+  placeholder,
+  accent,
+  items,
+  onAdd,
+  onRemove,
+}: {
+  title: string
+  placeholder: string
+  accent: string
+  items: EntryItem[]
+  onAdd: (text: string) => void
+  onRemove: (id: string) => void
+}) {
+  const [text, setText] = useState('')
+
+  const submit = () => {
+    const trimmed = text.trim()
+    if (!trimmed) return
+    onAdd(trimmed)
+    setText('')
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-semibold text-slate-900 dark:text-white">{title}</p>
+        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">{items.length}</span>
+      </div>
+
+      <ul className="mt-3 space-y-2">
+        {items.length === 0 ? (
+          <EmptyHint>Sin {title.toLowerCase()} todavía.</EmptyHint>
         ) : (
-          reminders.map((entry) => (
-            <li key={entry.id} className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm dark:border-white/10 dark:bg-slate-900/70">
-              <span className={`mt-0.5 grid h-4 w-4 shrink-0 place-items-center rounded-full border text-[10px] ${entry.done ? 'border-emerald-400 bg-emerald-400 text-white' : 'border-slate-300 text-transparent dark:border-white/20'}`}>✓</span>
-              <span className="flex-1">
-                <span className={`${entry.done ? 'text-slate-400 line-through dark:text-slate-500' : 'text-slate-700 dark:text-slate-200'}`}>{entry.text}</span>
-                {entry.dueDate ? <span className="mt-0.5 block text-xs text-slate-400">Vence: {formatDate(entry.dueDate)}</span> : null}
+          items.map((entry) => (
+            <li key={entry.id} className="flex items-start justify-between gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm text-slate-700 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-200">
+              <span className="min-w-0 flex-1">
+                <span className="block whitespace-pre-wrap break-words">{entry.text}</span>
+                {entry.createdAt ? <span className="mt-1 block text-xs text-slate-400">{entry.createdAt}</span> : null}
               </span>
+              <button type="button" onClick={() => onRemove(entry.id)} aria-label={`Eliminar ${title.toLowerCase()}`} className="shrink-0 rounded-full p-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 dark:text-slate-500 dark:hover:bg-rose-500/10">
+                <IconTrash />
+              </button>
             </li>
           ))
         )}
-      </DetailList>
+      </ul>
+
+      <div className="mt-3 flex gap-2">
+        <input
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              submit()
+            }
+          }}
+          placeholder={placeholder}
+          className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-violet-400 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100"
+        />
+        <button type="button" onClick={submit} className={`shrink-0 rounded-xl px-4 py-2 text-sm font-semibold text-white transition ${accent}`}>Añadir</button>
+      </div>
     </div>
   )
 }
@@ -206,18 +274,6 @@ function MetaItem({ label, value, icon }: { label: string; value?: string; icon:
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</p>
         <p className="truncate text-sm font-medium text-slate-800 dark:text-slate-100">{value?.trim() || '—'}</p>
       </div>
-    </div>
-  )
-}
-
-function DetailList({ label, count, children }: { label: string; count: number; children: ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/6">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-slate-900 dark:text-white">{label}</p>
-        <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-white/10 dark:text-slate-200">{count}</span>
-      </div>
-      <ul className="mt-3 space-y-2">{children}</ul>
     </div>
   )
 }
@@ -241,4 +297,7 @@ const IconCalendar = () => (
 )
 const IconExternal = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4 shrink-0"><path d="M14 5h5v5M19 5l-9 9M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+)
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" strokeLinecap="round" strokeLinejoin="round" /></svg>
 )

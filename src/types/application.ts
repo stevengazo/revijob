@@ -18,18 +18,15 @@ export const APPLICATION_STATUSES: ApplicationStatus[] = [
  * Representa una aplicación de empleo registrada por el usuario.
  * Se usa como modelo base para crear, editar, listar y filtrar registros.
  */
-export interface CommentItem {
+/** Entrada de texto con marca de tiempo (comentarios y notas comparten forma). */
+export interface EntryItem {
   id: string
   text: string
   createdAt: string
 }
 
-export interface ReminderItem {
-  id: string
-  text: string
-  dueDate?: string
-  done: boolean
-}
+export type CommentItem = EntryItem
+export type NoteItem = EntryItem
 
 export interface EmploymentApplication {
   id: string
@@ -41,13 +38,13 @@ export interface EmploymentApplication {
   location?: string
   url?: string
   salary?: string
-  notes?: string
   comments?: CommentItem[]
-  reminders?: ReminderItem[]
+  notes?: NoteItem[]
 }
 
 /**
  * Datos del formulario usados por el offcanvas para crear o actualizar una aplicación.
+ * Los comentarios y notas se gestionan aparte desde el panel de detalle.
  */
 export interface EmploymentApplicationDraft {
   company: string
@@ -58,7 +55,4 @@ export interface EmploymentApplicationDraft {
   location: string
   url: string
   salary: string
-  notes: string
-  comments: string[]
-  reminders: string[]
 }

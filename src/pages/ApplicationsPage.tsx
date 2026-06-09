@@ -22,9 +22,6 @@ const emptyDraft: EmploymentApplicationDraft = {
   location: '',
   url: '',
   salary: '',
-  notes: '',
-  comments: [],
-  reminders: [],
 }
 
 export default function ApplicationsPage() {
@@ -75,9 +72,6 @@ export default function ApplicationsPage() {
       location: item.location ?? '',
       url: item.url ?? '',
       salary: item.salary ?? '',
-      notes: item.notes ?? '',
-      comments: (item.comments ?? []).map((entry) => entry.text),
-      reminders: (item.reminders ?? []).map((entry) => entry.text),
     })
     setDrawerOpen(true)
   }
@@ -115,6 +109,30 @@ export default function ApplicationsPage() {
     }
   }
 
+  const addComment = (text: string) => {
+    if (!selectedId) return
+    applicationService.addComment(selectedId, text)
+    refresh()
+  }
+
+  const removeComment = (commentId: string) => {
+    if (!selectedId) return
+    applicationService.removeComment(selectedId, commentId)
+    refresh()
+  }
+
+  const addNote = (text: string) => {
+    if (!selectedId) return
+    applicationService.addNote(selectedId, text)
+    refresh()
+  }
+
+  const removeNote = (noteId: string) => {
+    if (!selectedId) return
+    applicationService.removeNote(selectedId, noteId)
+    refresh()
+  }
+
   return (
     <section className="mx-auto w-full max-w-7xl space-y-6">
       <ApplicationsHeader stats={stats} onCreate={openCreate} />
@@ -146,6 +164,10 @@ export default function ApplicationsPage() {
         selectedApplication={selectedApplication}
         onSave={save}
         onClose={() => setDrawerOpen(false)}
+        onAddComment={addComment}
+        onRemoveComment={removeComment}
+        onAddNote={addNote}
+        onRemoveNote={removeNote}
       />
     </section>
   )

@@ -11,12 +11,21 @@ export interface EmploymentApplicationService {
   create(data: EmploymentApplicationDraft): EmploymentApplication
   update(id: string, data: EmploymentApplicationDraft): EmploymentApplication | undefined
   remove(id: string): void
+  addComment(id: string, text: string): EmploymentApplication | undefined
+  removeComment(id: string, commentId: string): EmploymentApplication | undefined
+  addNote(id: string, text: string): EmploymentApplication | undefined
+  removeNote(id: string, noteId: string): EmploymentApplication | undefined
 }
 
 const STORAGE_KEY = 'revijob-applications'
 
 function createId(): string {
   return `app-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+/** Fecha local en formato 'YYYY-MM-DD' para sellar comentarios y notas. */
+function today(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function seedData(): EmploymentApplication[] {
@@ -30,12 +39,11 @@ function seedData(): EmploymentApplication[] {
       appliedDate: '2026-06-01',
       location: 'Remoto',
       salary: '$1,800',
-      notes: 'CV actualizado y carta enviada.',
       comments: [
         { id: 'c1', text: 'Enviar portfolio actualizado.', createdAt: '2026-06-01' },
       ],
-      reminders: [
-        { id: 'r1', text: 'Revisar feedback de entrevista', dueDate: '2026-06-12', done: false },
+      notes: [
+        { id: 'n1', text: 'CV actualizado y carta enviada.', createdAt: '2026-06-01' },
       ],
     },
   ]
@@ -87,15 +95,8 @@ export class LocalStorageEmploymentApplicationService implements EmploymentAppli
       location: data.location.trim() || undefined,
       url: data.url.trim() || undefined,
       salary: data.salary.trim() || undefined,
-      notes: data.notes.trim() || undefined,
-      comments: data.comments
-        .map((text) => text.trim())
-        .filter(Boolean)
-        .map((text) => ({ id: createId(), text, createdAt: new Date().toISOString().slice(0, 10) })),
-      reminders: data.reminders
-        .map((text) => text.trim())
-        .filter(Boolean)
-        .map((text) => ({ id: createId(), text, done: false })),
+      comments: [],
+      notes: [],
     }
 
     const items = [...this.read(), record]
@@ -104,15 +105,8 @@ export class LocalStorageEmploymentApplicationService implements EmploymentAppli
   }
 
   update(id: string, data: EmploymentApplicationDraft): EmploymentApplication | undefined {
-    const items = this.read()
-    const index = items.findIndex((item) => item.id === id)
-
-    if (index === -1) {
-      return undefined
-    }
-
-    items[index] = {
-      ...items[index],
+    return this.mutate(id, (current) => ({
+      ...current,
       company: data.company.trim(),
       position: data.position.trim(),
       platform: data.platform.trim(),
@@ -121,33 +115,58 @@ export class LocalStorageEmploymentApplicationService implements EmploymentAppli
       location: data.location.trim() || undefined,
       url: data.url.trim() || undefined,
       salary: data.salary.trim() || undefined,
-      notes: data.notes.trim() || undefined,
-      comments: data.comments
-        .map((text) => text.trim())
-        .filter(Boolean)
-        .map((text, index) => ({
-          id: items[index]?.comments?.[index]?.id ?? createId(),
-          text,
-          createdAt: items[index]?.comments?.[index]?.createdAt ?? new Date().toISOString().slice(0, 10),
-        })),
-      reminders: data.reminders
-        .map((text) => text.trim())
-        .filter(Boolean)
-        .map((text, index) => ({
-          id: items[index]?.reminders?.[index]?.id ?? createId(),
-          text,
-          dueDate: items[index]?.reminders?.[index]?.dueDate,
-          done: items[index]?.reminders?.[index]?.done ?? false,
-        })),
-    }
-
-    this.write(items)
-    return items[index]
+    }))
   }
 
   remove(id: string): void {
     const items = this.read().filter((item) => item.id !== id)
     this.write(items)
+  }
+
+  /** Aplica una transformación a una aplicación concreta y persiste el cambio. */
+  private mutate(
+    id: string,
+    transform: (current: EmploymentApplication) => EmploymentApplication,
+  ): EmploymentApplication | undefined {
+    const items = this.read()
+    const index = items.findIndex((item) => item.id === id)
+    if (index === -1) return undefined
+
+    items[index] = transform(items[index])
+    this.write(items)
+    return items[index]
+  }
+
+  addComment(id: string, text: string): EmploymentApplication | undefined {
+    const trimmed = text.trim()
+    if (!trimmed) return this.getById(id)
+    return this.mutate(id, (current) => ({
+      ...current,
+      comments: [...(current.comments ?? []), { id: createId(), text: trimmed, createdAt: today() }],
+    }))
+  }
+
+  removeComment(id: string, commentId: string): EmploymentApplication | undefined {
+    return this.mutate(id, (current) => ({
+      ...current,
+      comments: (current.comments ?? []).filter((comment) => comment.id !== commentId),
+    }))
+  }
+
+  addNote(id: string, text: string): EmploymentApplication | undefined {
+    const trimmed = text.trim()
+    if (!trimmed) return this.getById(id)
+    return this.mutate(id, (current) => ({
+      ...current,
+      notes: [...(Array.isArray(current.notes) ? current.notes : []), { id: createId(), text: trimmed, createdAt: today() }],
+    }))
+  }
+
+  removeNote(id: string, noteId: string): EmploymentApplication | undefined {
+    return this.mutate(id, (current) => ({
+      ...current,
+      notes: (Array.isArray(current.notes) ? current.notes : []).filter((note) => note.id !== noteId),
+    }))
   }
 }
 
