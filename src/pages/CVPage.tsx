@@ -51,61 +51,54 @@ export default function CVPage() {
   const [activeTab, setActiveTab] = useState<TabId>('perfil')
   const [showVersions, setShowVersions] = useState(false)
 
-  useEffect(() => {
-    const saved = cvService.save(draft)
+  // Guarda el draft y refresca la vista previa de forma síncrona en cada cambio.
+  const commit = (next: CVDraft) => {
+    setDraft(next)
+    const saved = cvService.save(next)
     setPreview(saved)
     setSavedAt(new Date(saved.updatedAt).toLocaleString())
-  }, [draft])
+  }
 
   const updateDraft = <K extends keyof CVDraft>(field: K, value: CVDraft[K]) => {
-    setDraft((prev) => ({ ...prev, [field]: value }))
+    commit({ ...draft, [field]: value })
   }
 
   const updateExperience = (index: number, field: keyof CVExperienceItem, value: string) => {
-    setDraft((prev) => {
-      const next = [...prev.experience]
-      next[index] = { ...next[index], [field]: value }
-      return { ...prev, experience: next }
-    })
+    const next = [...draft.experience]
+    next[index] = { ...next[index], [field]: value }
+    commit({ ...draft, experience: next })
   }
 
   const updateEducation = (index: number, field: keyof CVEducationItem, value: string) => {
-    setDraft((prev) => {
-      const next = [...prev.education]
-      next[index] = { ...next[index], [field]: value }
-      return { ...prev, education: next }
-    })
+    const next = [...draft.education]
+    next[index] = { ...next[index], [field]: value }
+    commit({ ...draft, education: next })
   }
 
   const updateProject = (index: number, field: keyof CVProjectItem, value: string) => {
-    setDraft((prev) => {
-      const next = [...prev.projects]
-      next[index] = { ...next[index], [field]: value }
-      return { ...prev, projects: next }
-    })
+    const next = [...draft.projects]
+    next[index] = { ...next[index], [field]: value }
+    commit({ ...draft, projects: next })
   }
 
-  const addExperience = () => setDraft((prev) => ({ ...prev, experience: [...prev.experience, emptyExperience()] }))
-  const addEducation = () => setDraft((prev) => ({ ...prev, education: [...prev.education, emptyEducation()] }))
-  const addProject = () => setDraft((prev) => ({ ...prev, projects: [...prev.projects, emptyProject()] }))
+  const addExperience = () => commit({ ...draft, experience: [...draft.experience, emptyExperience()] })
+  const addEducation = () => commit({ ...draft, education: [...draft.education, emptyEducation()] })
+  const addProject = () => commit({ ...draft, projects: [...draft.projects, emptyProject()] })
 
-  const removeExperience = (index: number) =>
-    setDraft((prev) => {
-      const next = prev.experience.filter((_, i) => i !== index)
-      return { ...prev, experience: next.length ? next : [emptyExperience()] }
-    })
+  const removeExperience = (index: number) => {
+    const next = draft.experience.filter((_, i) => i !== index)
+    commit({ ...draft, experience: next.length ? next : [emptyExperience()] })
+  }
 
-  const removeEducation = (index: number) =>
-    setDraft((prev) => {
-      const next = prev.education.filter((_, i) => i !== index)
-      return { ...prev, education: next.length ? next : [emptyEducation()] }
-    })
+  const removeEducation = (index: number) => {
+    const next = draft.education.filter((_, i) => i !== index)
+    commit({ ...draft, education: next.length ? next : [emptyEducation()] })
+  }
 
-  const removeProject = (index: number) =>
-    setDraft((prev) => {
-      const next = prev.projects.filter((_, i) => i !== index)
-      return { ...prev, projects: next.length ? next : [emptyProject()] }
-    })
+  const removeProject = (index: number) => {
+    const next = draft.projects.filter((_, i) => i !== index)
+    commit({ ...draft, projects: next.length ? next : [emptyProject()] })
+  }
 
   const handleDownloadPdf = () => downloadCvAsPdf(preview)
 
