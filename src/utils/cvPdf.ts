@@ -159,6 +159,19 @@ function buildCvHtml(cv: CVDocument): string {
     )
     .join('')
 
+  const others = (cv.others ?? [])
+    .filter((item) => item.title || item.description)
+    .map(
+      (item) => `
+        <div class="entry">
+          <div class="entry-head">
+            <span class="entry-title">${escapeHtml(item.title || 'Título')}</span>
+          </div>
+          ${item.description ? `<p class="entry-desc">${escapeHtml(item.description)}</p>` : ''}
+        </div>`,
+    )
+    .join('')
+
   const p = cv.personal
   const contactRows = [
     p.email
@@ -348,6 +361,8 @@ function buildCvHtml(cv: CVDocument): string {
       ${projects ? `<section class="section"><h2 class="section-title">Proyectos</h2>${projects}</section>` : ''}
 
       ${education ? `<section class="section"><h2 class="section-title">Educación</h2>${education}</section>` : ''}
+
+      ${others ? `<section class="section"><h2 class="section-title">Otros</h2>${others}</section>` : ''}
 
       <footer class="cv-footer">
         <span class="cv-footer-dot"></span>

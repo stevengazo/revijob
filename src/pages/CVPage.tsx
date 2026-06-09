@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { useRef, useState } from 'react'
 import type { ChangeEvent } from 'react'
-import type { CVDocument, CVDraft, CVExperienceItem, CVEducationItem, CVProjectItem, CVVersion } from '../types/cv'
+import type { CVDocument, CVDraft, CVExperienceItem, CVEducationItem, CVProjectItem, CVOtherItem, CVVersion } from '../types/cv'
 import { cvService } from '../services/cvService'
 import { downloadCvAsPdf, normalizeUrl } from '../utils/cvPdf'
 
@@ -17,6 +17,7 @@ const TABS = [
   { id: 'experiencia', label: 'Experiencia' },
   { id: 'educacion', label: 'Educación' },
   { id: 'proyectos', label: 'Proyectos' },
+  { id: 'otros', label: 'Otros' },
 ] as const
 
 type TabId = (typeof TABS)[number]['id']
@@ -40,6 +41,7 @@ const ACCENT_PRESETS = [
 const emptyExperience = (): CVExperienceItem => ({ role: '', company: '', period: '', description: '' })
 const emptyEducation = (): CVEducationItem => ({ degree: '', institution: '', period: '', details: '' })
 const emptyProject = (): CVProjectItem => ({ name: '', period: '', link: '', description: '' })
+const emptyOther = (): CVOtherItem => ({ title: '', description: '' })
 
 const documentToDraft = (doc: CVDocument): CVDraft => ({
   fullName: doc.personal.fullName,
@@ -56,6 +58,7 @@ const documentToDraft = (doc: CVDocument): CVDraft => ({
   experience: doc.experience.length ? doc.experience : [emptyExperience()],
   education: doc.education.length ? doc.education : [emptyEducation()],
   projects: doc.projects?.length ? doc.projects : [emptyProject()],
+  others: doc.others?.length ? doc.others : [emptyOther()],
   accentColor: doc.accentColor || ACCENT_PRESETS[0].value,
 })
 
@@ -98,9 +101,16 @@ export default function CVPage() {
     commit({ ...draft, projects: next })
   }
 
+  const updateOther = (index: number, field: keyof CVOtherItem, value: string) => {
+    const next = [...draft.others]
+    next[index] = { ...next[index], [field]: value }
+    commit({ ...draft, others: next })
+  }
+
   const addExperience = () => commit({ ...draft, experience: [...draft.experience, emptyExperience()] })
   const addEducation = () => commit({ ...draft, education: [...draft.education, emptyEducation()] })
   const addProject = () => commit({ ...draft, projects: [...draft.projects, emptyProject()] })
+  const addOther = () => commit({ ...draft, others: [...draft.others, emptyOther()] })
 
   const removeExperience = (index: number) => {
     const next = draft.experience.filter((_, i) => i !== index)
@@ -115,6 +125,11 @@ export default function CVPage() {
   const removeProject = (index: number) => {
     const next = draft.projects.filter((_, i) => i !== index)
     commit({ ...draft, projects: next.length ? next : [emptyProject()] })
+  }
+
+  const removeOther = (index: number) => {
+    const next = draft.others.filter((_, i) => i !== index)
+    commit({ ...draft, others: next.length ? next : [emptyOther()] })
   }
 
   const handleDownloadPdf = () => downloadCvAsPdf(preview)
@@ -172,6 +187,7 @@ export default function CVPage() {
     experiencia: draft.experience.length,
     educacion: draft.education.length,
     proyectos: draft.projects.length,
+    otros: draft.others.length,
   }
 
   return (
@@ -448,6 +464,24 @@ export default function CVPage() {
                 <button type="button" onClick={addProject} className="w-full rounded-2xl border border-dashed border-emerald-300 bg-emerald-50/50 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50 dark:border-emerald-400/30 dark:bg-emerald-500/5 dark:text-emerald-200 dark:hover:bg-emerald-500/10">+ Añadir proyecto</button>
               </div>
             ) : null}
+
+            {activeTab === 'otros' ? (
+              <div className="space-y-3">
+                {draft.others.map((item, index) => (
+                  <div key={index} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/70">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">Otro {index + 1}</span>
+                      <button type="button" onClick={() => removeOther(index)} className="rounded-full px-2 py-1 text-xs font-semibold text-rose-500 transition hover:bg-rose-50 dark:hover:bg-rose-500/10">Eliminar</button>
+                    </div>
+                    <div className="grid gap-3">
+                      <input value={item.title} onChange={(e) => updateOther(index, 'title', e.target.value)} placeholder="Título" className={subInputClass} />
+                      <textarea value={item.description} onChange={(e) => updateOther(index, 'description', e.target.value)} placeholder="Descripción" rows={3} className={subInputClass} />
+                    </div>
+                  </div>
+                ))}
+                <button type="button" onClick={addOther} className="w-full rounded-2xl border border-dashed border-amber-300 bg-amber-50/50 py-2.5 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-400/30 dark:bg-amber-500/5 dark:text-amber-200 dark:hover:bg-amber-500/10">+ Añadir otro</button>
+              </div>
+            ) : null}
           </div>
         </div>
 
@@ -459,14 +493,8 @@ export default function CVPage() {
                 <p className="text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">Vista previa</p>
                 <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">Documento final</h2>
               </div>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10"
-              >
-                Adjuntar PDF
-              </button>
-              <input ref={fileInputRef} type="file" accept="application/pdf" className="hidden" onChange={handlePdfUpload} />
+             
+             
             </div>
 
             <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-slate-900/80">
@@ -546,6 +574,20 @@ export default function CVPage() {
                           <a href={normalizeUrl(item.link)} target="_blank" rel="noreferrer" className="text-xs font-semibold text-sky-600 hover:underline dark:text-sky-300">{item.link}</a>
                         ) : null}
                         <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">{item.description || 'Descripción del proyecto.'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              ) : null}
+
+              {preview.others?.some((item) => item.title || item.description) ? (
+                <article className="rounded-3xl border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-slate-950/70">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Otros</h3>
+                  <div className="mt-3 space-y-3">
+                    {preview.others.map((item, index) => (
+                      <div key={`${item.title}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/80">
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.title || 'Título'}</p>
+                        <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">{item.description || 'Descripción.'}</p>
                       </div>
                     ))}
                   </div>

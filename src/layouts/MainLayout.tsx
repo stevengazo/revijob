@@ -1,4 +1,5 @@
 import { Link, Outlet, useLocation } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import ThemeToggle from '../components/ThemeToggle'
 import AdSenseBanner from '../components/AdSenseBanner'
@@ -65,16 +66,55 @@ const navItems: { to: string; label: string; hint: string; icon: ReactNode }[] =
 export default function MainLayout() {
   const { pathname } = useLocation()
   const isHome = pathname === '/'
+  const [menuOpen, setMenuOpen] = useState(false)
+  const closeMenu = () => setMenuOpen(false)
+
+  // Permite cerrar el menú móvil con la tecla Escape.
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [menuOpen])
 
   return (
     <div className="min-h-screen text-slate-700 dark:text-slate-100 lg:grid lg:grid-cols-[300px_1fr] lg:h-screen lg:overflow-hidden">
-      <aside className="border-b border-slate-200 bg-white/70 p-5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-6">
+      {/* Fondo oscuro detrás del menú móvil (off-canvas). */}
+      {menuOpen && (
+        <button
+          type="button"
+          aria-label="Cerrar menú"
+          onClick={() => setMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm lg:hidden"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[300px] max-w-[85vw] flex-col overflow-y-auto border-r border-slate-200 bg-white/95 p-5 backdrop-blur-xl transition-transform duration-300 ease-out dark:border-white/10 dark:bg-slate-950/95 lg:static lg:z-auto lg:h-screen lg:w-auto lg:max-w-none lg:translate-x-0 lg:border-r lg:bg-white/70 lg:p-6 dark:lg:bg-slate-950/70 ${
+          menuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="mb-3 flex justify-end lg:hidden">
+          <button
+            type="button"
+            aria-label="Cerrar menú"
+            onClick={() => setMenuOpen(false)}
+            className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-slate-300 dark:hover:text-white"
+          >
+            <svg {...iconProps} className="h-5 w-5">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </svg>
+          </button>
+        </div>
+
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-white/6 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-xl">
           <p className="mb-3 text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">Panel</p>
           <div className="flex items-center gap-3">
             <div className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-violet-500 to-sky-500 text-base font-black text-white shadow-lg shadow-violet-500/30">RJ</div>
             <div>
-              <Link to="/" className="text-lg font-semibold text-slate-900 dark:text-white">ReviJob</Link>
+              <Link to="/" onClick={closeMenu} className="text-lg font-semibold text-slate-900 dark:text-white">ReviJob</Link>
               <p className="text-sm text-slate-500 dark:text-slate-300">Gestión de talento</p>
             </div>
           </div>
@@ -87,6 +127,7 @@ export default function MainLayout() {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={closeMenu}
                 className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-sm transition ${
                   active
                     ? 'border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-400/40 dark:bg-white/10 dark:text-white'
@@ -103,8 +144,14 @@ export default function MainLayout() {
           })}
         </nav>
 
+        {/* Banner publicitario (Google AdSense) ocupando el espacio libre del lateral. */}
+        <div className="mt-6 flex-1">
+          <AdSenseBanner label="Lateral" className="h-full" />
+        </div>
+
         <Link
           to="/login"
+          onClick={closeMenu}
           className="mt-6 flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-red-600/25 transition hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
         >
           <svg {...iconProps} className="h-4 w-4">
@@ -119,9 +166,22 @@ export default function MainLayout() {
       <section className="flex min-h-screen flex-col lg:h-screen lg:min-h-0 lg:overflow-hidden">
         <header className="shrink-0 border-b border-slate-200 bg-white/70 px-3 py-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 lg:px-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">{isHome ? 'Inicio privado' : 'Área principal'}</p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{isHome ? 'Panel de control' : 'Configuración'}</h2>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                aria-label="Abrir menú"
+                aria-expanded={menuOpen}
+                onClick={() => setMenuOpen(true)}
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-violet-300 hover:text-slate-900 dark:border-white/10 dark:bg-white/6 dark:text-slate-200 dark:hover:text-white lg:hidden"
+              >
+                <svg {...iconProps}>
+                  <path d="M4 7h16M4 12h16M4 17h16" />
+                </svg>
+              </button>
+              <div>
+                <p className="text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">{isHome ? 'Inicio privado' : 'Área principal'}</p>
+                <h2 className="mt-1 text-xl font-semibold text-slate-900 dark:text-white">{isHome ? 'Panel de control' : 'Configuración'}</h2>
+              </div>
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
@@ -141,11 +201,6 @@ export default function MainLayout() {
 
         <main className="flex-1 overflow-y-auto py-5">
           <Outlet />
-
-          {/* Banner publicitario (Google AdSense) al final del contenido */}
-          <div className="mx-auto mt-6 w-full max-w-7xl px-1">
-            <AdSenseBanner label="Banner inferior" />
-          </div>
         </main>
       </section>
     </div>

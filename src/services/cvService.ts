@@ -73,6 +73,12 @@ function defaultDraft(): CVDraft {
         description: 'Librería de componentes accesibles y tokens de diseño usada por todo el producto.',
       },
     ],
+    others: [
+      {
+        title: 'Idiomas',
+        description: 'Español (nativo), Inglés (C1).',
+      },
+    ],
     accentColor: DEFAULT_ACCENT,
   }
 }
@@ -97,6 +103,7 @@ function seedData(): CVDocument {
     experience: draft.experience,
     education: draft.education,
     projects: draft.projects,
+    others: draft.others,
     accentColor: draft.accentColor,
     updatedAt: new Date().toISOString(),
   }
@@ -115,8 +122,12 @@ class LocalStorageCVService implements CVService {
 
     try {
       const parsed = JSON.parse(raw) as CVDocument
-      // Compatibilidad con CVs guardados antes del color de énfasis.
-      return { ...parsed, accentColor: parsed.accentColor || DEFAULT_ACCENT }
+      // Compatibilidad con CVs guardados antes del color de énfasis y la sección "Otros".
+      return {
+        ...parsed,
+        accentColor: parsed.accentColor || DEFAULT_ACCENT,
+        others: Array.isArray(parsed.others) ? parsed.others : [],
+      }
     } catch {
       const fallback = seedData()
       localStorage.setItem(this.storageKey, JSON.stringify(fallback))
@@ -171,6 +182,10 @@ class LocalStorageCVService implements CVService {
         name: item.name.trim(),
         period: item.period.trim(),
         link: item.link.trim(),
+        description: item.description.trim(),
+      })),
+      others: data.others.map((item) => ({
+        title: item.title.trim(),
         description: item.description.trim(),
       })),
       accentColor: data.accentColor || current.accentColor || DEFAULT_ACCENT,

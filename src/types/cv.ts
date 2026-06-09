@@ -19,6 +19,11 @@ export interface CVProjectItem {
   description: string
 }
 
+export interface CVOtherItem {
+  title: string
+  description: string
+}
+
 export interface CVDocument {
   id: string
   personal: {
@@ -37,6 +42,7 @@ export interface CVDocument {
   experience: CVExperienceItem[]
   education: CVEducationItem[]
   projects: CVProjectItem[]
+  others: CVOtherItem[]
   accentColor: string
   pdfDataUrl?: string
   pdfName?: string
@@ -65,5 +71,6 @@ export interface CVDraft {
   experience: CVExperienceItem[]
   education: CVEducationItem[]
   projects: CVProjectItem[]
+  others: CVOtherItem[]
   accentColor: string
 }
