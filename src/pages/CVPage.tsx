@@ -2,7 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import type { CVDocument, CVDraft, CVExperienceItem, CVEducationItem, CVProjectItem, CVOtherItem, CVVersion } from '../types/cv'
 import { cvService } from '../services/cvService'
-import { downloadCvAsPdf, normalizeUrl } from '../utils/cvPdf'
+import { downloadCvAsPdf, downloadCvAsAtsPdf, normalizeUrl } from '../utils/cvPdf'
 
 
 
@@ -133,6 +133,7 @@ export default function CVPage() {
   }
 
   const handleDownloadPdf = () => downloadCvAsPdf(preview)
+  const handleDownloadAtsPdf = () => downloadCvAsAtsPdf(preview)
 
   const handleSaveVersion = () => {
     const label = window.prompt('Nombre de la versión (opcional):', '')
@@ -222,6 +223,17 @@ export default function CVPage() {
               <path d="M3.5 13a.75.75 0 0 1 .75.75v1.5c0 .14.11.25.25.25h11a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 15.5 17h-11A1.75 1.75 0 0 1 2.75 15.25v-1.5A.75.75 0 0 1 3.5 13Z" />
             </svg>
             Descargar PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleDownloadAtsPdf}
+            title="Formato de una columna y texto plano, optimizado para los filtros automáticos (ATS)"
+            className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/6 dark:text-slate-100 dark:hover:bg-white/10"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+              <path fillRule="evenodd" d="M4.5 2A1.5 1.5 0 0 0 3 3.5v13A1.5 1.5 0 0 0 4.5 18h11a1.5 1.5 0 0 0 1.5-1.5V7.62a1.5 1.5 0 0 0-.44-1.06l-3.62-3.62A1.5 1.5 0 0 0 11.38 2H4.5Zm1.25 7.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5h-6.5a.75.75 0 0 1-.75-.75Zm.75 2.75a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z" clipRule="evenodd" />
+            </svg>
+            Descargar PDF (ATS)
           </button>
         </div>
       </motion.div>

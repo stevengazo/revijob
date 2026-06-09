@@ -374,12 +374,180 @@ function buildCvHtml(cv: CVDocument): string {
 </html>`
 }
 
-/**
- * Abre una ventana imprimible con el CV maquetado y lanza el diálogo de
- * impresión del navegador, donde el usuario puede elegir "Guardar como PDF".
- */
-export function downloadCvAsPdf(cv: CVDocument): void {
-  const html = buildCvHtml(cv)
+/* ============================================================================
+ * Versión optimizada para ATS (Applicant Tracking Systems)
+ * ----------------------------------------------------------------------------
+ * Los ATS leen el PDF como un flujo de texto en una sola columna, de arriba
+ * abajo. Esta plantilla evita lo que confunde a esos parsers:
+ *   - Una sola columna (sin barra lateral ni grid).
+ *   - Tipografía estándar (Arial) y texto siempre seleccionable.
+ *   - Datos de contacto como texto con etiqueta ("Email:"), sin iconos.
+ *   - Títulos de sección convencionales y reconocibles.
+ *   - Habilidades y competencias como texto, no como "pills".
+ *   - Sin fondos de color, gradientes, ni cabeceras/pies decorativos.
+ *   - Logros en viñetas reales (<ul>) cuando la descripción trae varias líneas.
+ * ========================================================================== */
+
+/** Renderiza una descripción: viñetas si trae varias líneas, párrafo si es una. */
+function atsDescription(text: string): string {
+  const lines = text
+    .split('\n')
+    .map((line) => line.replace(/^[\s•\-*]+/, '').trim())
+    .filter(Boolean)
+  if (lines.length === 0) return ''
+  if (lines.length === 1) return `<p class="desc">${escapeHtml(lines[0])}</p>`
+  return `<ul class="desc-list">${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`
+}
+
+function buildAtsCvHtml(cv: CVDocument): string {
+  // El acento solo se usa como color de texto en los títulos (no afecta al
+  // parseo del ATS), oscurecido para garantizar contraste al imprimir.
+  const accent = /^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(cv.accentColor?.trim() || '')
+    ? darken(cv.accentColor.trim(), 0.2)
+    : '#1e293b'
+
+  const p = cv.personal
+  const contact = [
+    p.email ? `Email: ${escapeHtml(p.email.trim())}` : '',
+    p.phone ? `Teléfono: ${escapeHtml(p.phone.trim())}` : '',
+    p.location ? `Ubicación: ${escapeHtml(p.location.trim())}` : '',
+    p.website ? `Sitio web: ${escapeHtml(prettyUrl(p.website))}` : '',
+    p.linkedin ? `LinkedIn: ${escapeHtml(prettyUrl(p.linkedin))}` : '',
+    p.x ? `X: ${escapeHtml(prettyUrl(p.x))}` : '',
+  ]
+    .filter(Boolean)
+    .map((line) => `<div>${line}</div>`)
+    .join('')
+
+  const section = (title: string, body: string) =>
+    body ? `<section class="section"><h2 class="section-title">${title}</h2>${body}</section>` : ''
+
+  const skills = cv.skills.length
+    ? `<p class="inline-list">${escapeHtml(cv.skills.join(', '))}</p>`
+    : ''
+
+  const competencies = cv.competencies?.length
+    ? `<p class="inline-list">${escapeHtml(cv.competencies.join(', '))}</p>`
+    : ''
+
+  const experience = cv.experience
+    .filter((item) => item.role || item.company || item.period || item.description)
+    .map(
+      (item) => `
+        <div class="entry">
+          <p class="entry-title">${escapeHtml(item.role || 'Cargo')}</p>
+          ${
+            item.company || item.period
+              ? `<p class="entry-meta">${[item.company, item.period].filter(Boolean).map(escapeHtml).join(' — ')}</p>`
+              : ''
+          }
+          ${atsDescription(item.description)}
+        </div>`,
+    )
+    .join('')
+
+  const education = cv.education
+    .filter((item) => item.degree || item.institution || item.period || item.details)
+    .map(
+      (item) => `
+        <div class="entry">
+          <p class="entry-title">${escapeHtml(item.degree || 'Título')}</p>
+          ${
+            item.institution || item.period
+              ? `<p class="entry-meta">${[item.institution, item.period].filter(Boolean).map(escapeHtml).join(' — ')}</p>`
+              : ''
+          }
+          ${atsDescription(item.details)}
+        </div>`,
+    )
+    .join('')
+
+  const projects = (cv.projects ?? [])
+    .filter((item) => item.name || item.description || item.link)
+    .map(
+      (item) => `
+        <div class="entry">
+          <p class="entry-title">${escapeHtml(item.name || 'Proyecto')}</p>
+          ${
+            item.link || item.period
+              ? `<p class="entry-meta">${[item.period, item.link ? prettyUrl(item.link) : ''].filter(Boolean).map(escapeHtml).join(' — ')}</p>`
+              : ''
+          }
+          ${atsDescription(item.description)}
+        </div>`,
+    )
+    .join('')
+
+  const others = (cv.others ?? [])
+    .filter((item) => item.title || item.description)
+    .map(
+      (item) => `
+        <div class="entry">
+          <p class="entry-title">${escapeHtml(item.title || 'Título')}</p>
+          ${atsDescription(item.description)}
+        </div>`,
+    )
+    .join('')
+
+  return `<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(cv.personal.fullName || 'CV')}</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #000000;
+      background: #ffffff;
+      font-size: 11pt;
+      line-height: 1.4;
+    }
+    .name { font-size: 20pt; font-weight: 700; }
+    .headline { font-size: 11.5pt; font-weight: 700; margin-top: 2pt; }
+    .contact { font-size: 10pt; margin-top: 8pt; }
+    .contact div { margin: 1pt 0; }
+
+    .section { margin-top: 14pt; }
+    .section-title {
+      font-size: 12pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      color: ${accent}; border-bottom: 1px solid #000000;
+      padding-bottom: 2pt; margin-bottom: 6pt;
+    }
+    .summary, .inline-list, .desc { font-size: 11pt; }
+    .entry { margin-bottom: 9pt; }
+    .entry-title { font-weight: 700; font-size: 11pt; }
+    .entry-meta { font-size: 10pt; margin: 1pt 0; }
+    .desc { margin-top: 2pt; }
+    .desc-list { margin: 2pt 0 2pt 16pt; }
+    .desc-list li { margin: 1pt 0; }
+
+    @media print {
+      .entry, .section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="name">${escapeHtml(cv.personal.fullName || 'Tu nombre')}</div>
+    ${cv.personal.headline ? `<div class="headline">${escapeHtml(cv.personal.headline)}</div>` : ''}
+    ${contact ? `<div class="contact">${contact}</div>` : ''}
+  </header>
+
+  ${section('Resumen profesional', cv.summary ? `<p class="summary">${escapeHtml(cv.summary)}</p>` : '')}
+  ${section('Habilidades', skills)}
+  ${section('Competencias', competencies)}
+  ${section('Experiencia profesional', experience)}
+  ${section('Educación', education)}
+  ${section('Proyectos', projects)}
+  ${section('Información adicional', others)}
+</body>
+</html>`
+}
+
+/** Abre una ventana imprimible con el HTML dado y lanza el diálogo de impresión. */
+function printHtml(html: string): void {
   const printWindow = window.open('', '_blank', 'width=820,height=1000')
 
   if (!printWindow) {
@@ -402,4 +570,20 @@ export function downloadCvAsPdf(cv: CVDocument): void {
   } else {
     printWindow.onload = () => setTimeout(triggerPrint, 250)
   }
+}
+
+/**
+ * Descarga el CV con el diseño visual (dos columnas) pensado para personas.
+ * Abre el diálogo de impresión, donde el usuario elige "Guardar como PDF".
+ */
+export function downloadCvAsPdf(cv: CVDocument): void {
+  printHtml(buildCvHtml(cv))
+}
+
+/**
+ * Descarga el CV en formato optimizado para ATS (una sola columna, texto
+ * plano y secciones estándar) para superar los filtros automáticos.
+ */
+export function downloadCvAsAtsPdf(cv: CVDocument): void {
+  printHtml(buildAtsCvHtml(cv))
 }
