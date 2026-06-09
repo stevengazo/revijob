@@ -9,7 +9,7 @@ export default function AuthModeToggle() {
   ]
 
   return (
-    <div className="mb-6 inline-flex w-full max-w-md rounded-[18px] border border-white/10 bg-slate-950/85 p-1 shadow-[0_10px_30px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+    <div className="mb-6 inline-flex w-full max-w-md rounded-[18px] border border-slate-200 bg-slate-100 p-1 shadow-sm dark:border-white/10 dark:bg-slate-950/85 dark:shadow-[0_10px_30px_rgba(15,23,42,0.45)] dark:backdrop-blur-xl">
       {options.map((option) => {
         const active = pathname === option.to
         return (
@@ -19,7 +19,7 @@ export default function AuthModeToggle() {
             className={`flex-1 rounded-[14px] px-4 py-2.5 text-center text-sm font-semibold tracking-wide transition-all duration-200 ${
               active
                 ? 'bg-gradient-to-r from-violet-500 via-violet-500 to-sky-500 text-white shadow-lg shadow-violet-500/20'
-                : 'text-slate-300 hover:bg-white/6 hover:text-white'
+                : 'text-slate-500 hover:bg-white hover:text-slate-900 dark:text-slate-300 dark:hover:bg-white/6 dark:hover:text-white'
             }`}
           >
             {option.label}

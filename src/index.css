@@ -1,13 +1,26 @@
 @import 'tailwindcss';
 
+/* Habilita el modo oscuro basado en la clase .dark en <html> (Tailwind v4). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  color: #eff6ff;
-  background-color: #07111f;
+  --bg-base: #f1f5f9;
+  --bg-mid: #e2e8f0;
+  --bg-glow: rgba(124, 58, 237, 0.1);
+  --text-base: #0f172a;
+  color: var(--text-base);
   font-family: Inter, 'Segoe UI', sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root.dark {
+  --bg-base: #07111f;
+  --bg-mid: #0b1625;
+  --bg-glow: rgba(124, 58, 237, 0.18);
+  --text-base: #eff6ff;
 }
 
 * { box-sizing: border-box; }
@@ -16,15 +29,14 @@ html, body, #root { min-height: 100%; }
 
 body {
   margin: 0;
+  color: var(--text-base);
   background:
-    radial-gradient(circle at top, rgba(124, 58, 237, 0.15), transparent 25%),
-    linear-gradient(180deg, #07111f 0%, #0b1625 45%, #09111d 100%);
+    radial-gradient(circle at top, var(--bg-glow), transparent 30%),
+    linear-gradient(180deg, var(--bg-base) 0%, var(--bg-mid) 50%, var(--bg-base) 100%);
+  background-attachment: fixed;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 h1, h2, p { margin-top: 0; }
 
-h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.02; color: #fff; }
-
-h2 { font-size: 1.05rem; color: #f8fafc; }
-
-p { color: #dbeafe; }
+h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.04; }

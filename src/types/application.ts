@@ -5,6 +5,15 @@ export type ApplicationStatus =
   | 'Rechazada'
   | 'Aceptada'
 
+/** Lista canónica de estados, usada en el kanban y el formulario. */
+export const APPLICATION_STATUSES: ApplicationStatus[] = [
+  'Pendiente',
+  'En revisión',
+  'Entrevista',
+  'Rechazada',
+  'Aceptada',
+]
+
 /**
  * Representa una aplicación de empleo registrada por el usuario.
  * Se usa como modelo base para crear, editar, listar y filtrar registros.
