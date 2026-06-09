@@ -11,8 +11,10 @@ import { useEffect, useRef } from 'react'
  * 2. Copia tu "ca-pub-XXXXXXXXXXXXXXXX" en ADSENSE_CLIENT.
  * 3. Crea un bloque de anuncio (display) y copia su "data-ad-slot" en ADSENSE_SLOT.
  */
+
 export const ADSENSE_CLIENT = '' // p. ej. 'ca-pub-0000000000000000'
 export const ADSENSE_SLOT = '' // p. ej. '1234567890'
+
 
 declare global {
   interface Window {
