@@ -4,6 +4,8 @@ import type { CVDocument, CVDraft, CVExperienceItem, CVEducationItem, CVProjectI
 import { cvService } from '../services/cvService'
 import { downloadCvAsPdf, normalizeUrl } from '../utils/cvPdf'
 
+
+
 const inputClass =
   'w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 dark:border-white/10 dark:bg-slate-950 dark:focus:border-violet-400/60 dark:focus:ring-violet-400/10'
 const subInputClass =
