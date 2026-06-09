@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import SettingsPage from './pages/SettingsPage'
 import ApplicationsPage from './pages/ApplicationsPage'
+import CVPage from './pages/CVPage'
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/applications" element={<ApplicationsPage />} />
+          <Route path="/cv" element={<CVPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>

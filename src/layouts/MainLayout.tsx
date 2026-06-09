@@ -37,6 +37,18 @@ const navItems: { to: string; label: string; hint: string; icon: ReactNode }[] =
     ),
   },
   {
+    to: '/cv',
+    label: 'CV',
+    hint: 'Editor',
+    icon: (
+      <svg {...iconProps}>
+        <path d="M7 4h6l4 4v12H7z" />
+        <path d="M13 4v5h5" />
+        <path d="M9 13h6M9 17h4" />
+      </svg>
+    ),
+  },
+  {
     to: '/settings',
     label: 'Configuración',
     hint: 'Perfil',
@@ -54,8 +66,8 @@ export default function MainLayout() {
   const isHome = pathname === '/'
 
   return (
-    <div className="min-h-screen text-slate-700 dark:text-slate-100 lg:grid lg:grid-cols-[300px_1fr]">
-      <aside className="border-b border-slate-200 bg-white/70 p-5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 lg:min-h-screen lg:border-b-0 lg:border-r lg:p-6">
+    <div className="min-h-screen text-slate-700 dark:text-slate-100 lg:grid lg:grid-cols-[300px_1fr] lg:h-screen lg:overflow-hidden">
+      <aside className="border-b border-slate-200 bg-white/70 p-5 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/70 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r lg:p-6">
         <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-white/6 dark:shadow-2xl dark:shadow-black/30 dark:backdrop-blur-xl">
           <p className="mb-3 text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">Panel</p>
           <div className="flex items-center gap-3">
@@ -103,8 +115,8 @@ export default function MainLayout() {
         </Link>
       </aside>
 
-      <section className="flex min-h-screen flex-col">
-        <header className="border-b border-slate-200 bg-white/70 px-5 py-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 lg:px-6">
+      <section className="flex min-h-screen flex-col lg:h-screen lg:min-h-0 lg:overflow-hidden">
+        <header className="shrink-0 border-b border-slate-200 bg-white/70 px-3 py-4 backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/80 lg:px-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p className="text-[0.68rem] uppercase tracking-[0.35em] text-violet-600 dark:text-violet-200">{isHome ? 'Inicio privado' : 'Área principal'}</p>
@@ -126,7 +138,7 @@ export default function MainLayout() {
           </div>
         </header>
 
-        <main className="flex-1 px-5 py-6 lg:px-6">
+        <main className="flex-1 overflow-y-auto  py-5">
           <Outlet />
         </main>
       </section>
