@@ -17,6 +17,57 @@ export function normalizeUrl(value: string): string {
   return `https://${trimmed}`
 }
 
+/* ---------- Utilidades de color ---------- */
+
+type RGB = [number, number, number]
+const WHITE: RGB = [255, 255, 255]
+const BLACK: RGB = [0, 0, 0]
+
+function clampByte(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)))
+}
+
+function hexToRgb(hex: string): RGB {
+  const clean = hex.replace('#', '')
+  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean
+  const num = parseInt(full, 16)
+  return [(num >> 16) & 255, (num >> 8) & 255, num & 255]
+}
+
+function rgbToHex([r, g, b]: RGB): string {
+  return '#' + [r, g, b].map((v) => clampByte(v).toString(16).padStart(2, '0')).join('')
+}
+
+/** Mezcla un color hacia un objetivo (white/black) según una proporción 0–1. */
+function mix(hex: string, target: RGB, amount: number): string {
+  const [r, g, b] = hexToRgb(hex)
+  return rgbToHex([
+    r + (target[0] - r) * amount,
+    g + (target[1] - g) * amount,
+    b + (target[2] - b) * amount,
+  ])
+}
+
+const lighten = (hex: string, amount: number) => mix(hex, WHITE, amount)
+const darken = (hex: string, amount: number) => mix(hex, BLACK, amount)
+
+/** Deriva la paleta completa del CV a partir del color de énfasis elegido. */
+function buildPalette(accent: string) {
+  const base = /^#?[0-9a-f]{3}([0-9a-f]{3})?$/i.test(accent.trim())
+    ? accent.trim()
+    : '#7c3aed'
+  return {
+    base,
+    mid: darken(base, 0.12),
+    dark: darken(base, 0.35),
+    gradTop: darken(base, 0.35),
+    gradMid: darken(base, 0.12),
+    gradBot: base,
+    tint: lighten(base, 0.86),
+    bullet: lighten(base, 0.45),
+  }
+}
+
 /** Texto legible de una URL (sin protocolo ni barra final). */
 function prettyUrl(value: string): string {
   return value
@@ -50,6 +101,7 @@ function initials(fullName: string): string {
 }
 
 function buildCvHtml(cv: CVDocument): string {
+  const pal = buildPalette(cv.accentColor)
   const skills = cv.skills.length
     ? cv.skills.map((skill) => `<li class="skill">${escapeHtml(skill)}</li>`).join('')
     : ''
@@ -160,7 +212,7 @@ function buildCvHtml(cv: CVDocument): string {
 
     /* ---------- Barra lateral ---------- */
     .sidebar {
-      background: linear-gradient(160deg, #4c1d95 0%, #6d28d9 55%, #7c3aed 100%);
+      background: linear-gradient(160deg, ${pal.gradTop} 0%, ${pal.gradMid} 55%, ${pal.gradBot} 100%);
       color: #ede9fe;
       padding: 26px 22px;
     }
@@ -207,22 +259,22 @@ function buildCvHtml(cv: CVDocument): string {
     }
     .competency::before {
       content: ''; position: absolute; left: 0; top: 6px;
-      width: 5px; height: 5px; border-radius: 50%; background: #c4b5fd;
+      width: 5px; height: 5px; border-radius: 50%; background: ${pal.bullet};
     }
 
     /* ---------- Columna principal ---------- */
     .main { padding: 34px 32px; }
     .name { font-size: 30px; font-weight: 700; color: #0f172a; letter-spacing: -0.02em; line-height: 1.1; }
     .headline {
-      font-size: 14px; font-weight: 600; color: #7c3aed;
+      font-size: 14px; font-weight: 600; color: ${pal.base};
       text-transform: uppercase; letter-spacing: 0.12em; margin-top: 6px;
     }
-    .name-rule { height: 3px; width: 54px; background: #7c3aed; border-radius: 3px; margin-top: 14px; }
+    .name-rule { height: 3px; width: 54px; background: ${pal.base}; border-radius: 3px; margin-top: 14px; }
 
     .section { margin-top: 26px; }
     .section-title {
       font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.18em;
-      color: #4c1d95; font-weight: 700; margin-bottom: 12px;
+      color: ${pal.dark}; font-weight: 700; margin-bottom: 12px;
       display: flex; align-items: center; gap: 8px;
     }
     .section-title::after { content: ''; flex: 1; height: 1px; background: #e2e8f0; }
@@ -233,7 +285,7 @@ function buildCvHtml(cv: CVDocument): string {
     .entry::before {
       content: ''; position: absolute; left: 0; top: 5px;
       width: 7px; height: 7px; border-radius: 50%;
-      background: #7c3aed;
+      background: ${pal.base};
     }
     .entry::after {
       content: ''; position: absolute; left: 3px; top: 14px; bottom: -10px;
@@ -243,17 +295,28 @@ function buildCvHtml(cv: CVDocument): string {
     .entry-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
     .entry-title { font-size: 14px; font-weight: 700; color: #0f172a; }
     .entry-period {
-      font-size: 11px; font-weight: 600; color: #6d28d9; white-space: nowrap;
-      background: #f3e8ff; border-radius: 999px; padding: 2px 9px;
+      font-size: 11px; font-weight: 600; color: ${pal.mid}; white-space: nowrap;
+      background: ${pal.tint}; border-radius: 999px; padding: 2px 9px;
     }
     .entry-sub { font-size: 12.5px; color: #64748b; font-weight: 600; margin-top: 1px; }
     .entry-desc { font-size: 12.5px; color: #475569; margin-top: 5px; }
     .entry-link {
       display: inline-flex; align-items: center; gap: 5px; margin-top: 3px;
-      font-size: 11.5px; font-weight: 600; color: #6d28d9; text-decoration: none;
+      font-size: 11.5px; font-weight: 600; color: ${pal.mid}; text-decoration: none;
     }
     .entry-link:hover { text-decoration: underline; }
-    .entry-link-icon svg { width: 12px; height: 12px; color: #6d28d9; vertical-align: middle; }
+    .entry-link-icon svg { width: 12px; height: 12px; color: ${pal.mid}; vertical-align: middle; }
+
+    /* ---------- Marca de agua / pie de página ---------- */
+    .cv-footer {
+      margin-top: 30px; padding-top: 12px;
+      border-top: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: center; gap: 7px;
+      font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #94a3b8;
+    }
+    .cv-footer-dot { width: 6px; height: 6px; border-radius: 50%; background: ${pal.base}; }
+    .cv-footer strong { color: ${pal.mid}; font-weight: 700; letter-spacing: 0.1em; }
 
     @media print {
       body { background: #ffffff; }
@@ -285,6 +348,11 @@ function buildCvHtml(cv: CVDocument): string {
       ${projects ? `<section class="section"><h2 class="section-title">Proyectos</h2>${projects}</section>` : ''}
 
       ${education ? `<section class="section"><h2 class="section-title">Educación</h2>${education}</section>` : ''}
+
+      <footer class="cv-footer">
+        <span class="cv-footer-dot"></span>
+        Creado con <strong>ReviJob</strong>
+      </footer>
     </main>
   </div>
 </body>

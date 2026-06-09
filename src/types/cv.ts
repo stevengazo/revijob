@@ -37,6 +37,7 @@ export interface CVDocument {
   experience: CVExperienceItem[]
   education: CVEducationItem[]
   projects: CVProjectItem[]
+  accentColor: string
   pdfDataUrl?: string
   pdfName?: string
   updatedAt: string
@@ -64,4 +65,5 @@ export interface CVDraft {
   experience: CVExperienceItem[]
   education: CVEducationItem[]
   projects: CVProjectItem[]
+  accentColor: string
 }

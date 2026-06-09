@@ -27,7 +27,7 @@ const emptyDraft: EmploymentApplicationDraft = {
 export default function ApplicationsPage() {
   const [applications, setApplications] = useState<EmploymentApplication[]>(() => applicationService.list())
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [viewMode, setViewMode] = useState<ViewMode>('calendar')
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
   const [mode, setMode] = useState<DrawerMode>('create')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [draft, setDraft] = useState<EmploymentApplicationDraft>(emptyDraft)

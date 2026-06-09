@@ -21,6 +21,22 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
+// Galería de colores de énfasis disponibles para el CV.
+const ACCENT_PRESETS = [
+  { name: 'Violeta', value: '#7c3aed' },
+  { name: 'Índigo', value: '#4f46e5' },
+  { name: 'Azul', value: '#2563eb' },
+  { name: 'Cian', value: '#0891b2' },
+  { name: 'Esmeralda', value: '#059669' },
+  { name: 'Lima', value: '#65a30d' },
+  { name: 'Ámbar', value: '#d97706' },
+  { name: 'Naranja', value: '#ea580c' },
+  { name: 'Rojo', value: '#dc2626' },
+  { name: 'Rosa', value: '#db2777' },
+  { name: 'Fucsia', value: '#c026d3' },
+  { name: 'Pizarra', value: '#475569' },
+] as const
+
 const emptyExperience = (): CVExperienceItem => ({ role: '', company: '', period: '', description: '' })
 const emptyEducation = (): CVEducationItem => ({ degree: '', institution: '', period: '', details: '' })
 const emptyProject = (): CVProjectItem => ({ name: '', period: '', link: '', description: '' })
@@ -40,6 +56,7 @@ const documentToDraft = (doc: CVDocument): CVDraft => ({
   experience: doc.experience.length ? doc.experience : [emptyExperience()],
   education: doc.education.length ? doc.education : [emptyEducation()],
   projects: doc.projects?.length ? doc.projects : [emptyProject()],
+  accentColor: doc.accentColor || ACCENT_PRESETS[0].value,
 })
 
 export default function CVPage() {
@@ -144,6 +161,10 @@ export default function CVPage() {
     setPreview(updated)
     setSavedAt(new Date(updated.updatedAt).toLocaleString())
   }
+
+  const accent = preview.accentColor || ACCENT_PRESETS[0].value
+  // Fondo tenue del mismo color (10% de opacidad) para chips y etiquetas.
+  const accentSoft = `${accent}1a`
 
   const tabCount: Record<TabId, number | null> = {
     perfil: null,
@@ -254,6 +275,53 @@ export default function CVPage() {
       <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
         {/* Editor con pestañas */}
         <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/50 dark:border-white/10 dark:bg-slate-950/70 dark:shadow-2xl dark:shadow-black/30">
+          {/* ---------- Galería de color de énfasis ---------- */}
+          <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 dark:border-white/10 dark:bg-slate-900/60">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-300">Color de énfasis</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {ACCENT_PRESETS.map((preset) => {
+                const selected = accent.toLowerCase() === preset.value.toLowerCase()
+                return (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    title={preset.name}
+                    aria-label={`Color ${preset.name}`}
+                    aria-pressed={selected}
+                    onClick={() => updateDraft('accentColor', preset.value)}
+                    className={`relative h-7 w-7 rounded-full transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900 ${
+                      selected ? 'ring-2 ring-offset-2 ring-offset-white dark:ring-offset-slate-900' : 'hover:scale-110'
+                    }`}
+                    style={{ backgroundColor: preset.value, boxShadow: selected ? `0 0 0 2px ${preset.value}` : undefined }}
+                  >
+                    {selected ? (
+                      <svg viewBox="0 0 20 20" fill="white" className="absolute inset-0 m-auto h-4 w-4 drop-shadow">
+                        <path fillRule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7.5 7.5a1 1 0 0 1-1.4 0l-3.5-3.5a1 1 0 1 1 1.4-1.4l2.8 2.8 6.8-6.8a1 1 0 0 1 1.4 0Z" clipRule="evenodd" />
+                      </svg>
+                    ) : null}
+                  </button>
+                )
+              })}
+              {/* Selector libre para cualquier otro color */}
+              <label
+                className="relative inline-flex h-7 w-7 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-dashed border-slate-300 bg-white text-slate-400 transition hover:text-slate-600 dark:border-white/20 dark:bg-slate-800 dark:text-slate-300"
+                title="Color personalizado"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M10 3.5a.75.75 0 0 1 .75.75v5h5a.75.75 0 0 1 0 1.5h-5v5a.75.75 0 0 1-1.5 0v-5h-5a.75.75 0 0 1 0-1.5h5v-5A.75.75 0 0 1 10 3.5Z" />
+                </svg>
+                <input
+                  type="color"
+                  value={accent}
+                  onChange={(e) => updateDraft('accentColor', e.target.value)}
+                  className="absolute inset-0 cursor-pointer opacity-0"
+                />
+              </label>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-1.5 border-b border-slate-100 pb-3 dark:border-white/10">
             {TABS.map((tab) => {
               const active = activeTab === tab.id
@@ -403,7 +471,7 @@ export default function CVPage() {
 
             <div className="mt-4 rounded-3xl border border-slate-200 bg-slate-50 p-5 dark:border-white/10 dark:bg-slate-900/80">
               <h3 className="text-2xl font-semibold text-slate-900 dark:text-white">{preview.personal.fullName || 'Tu nombre'}</h3>
-              <p className="text-sm text-violet-600 dark:text-violet-200">{preview.personal.headline || 'Tu titular profesional'}</p>
+              <p className="text-sm font-semibold" style={{ color: accent }}>{preview.personal.headline || 'Tu titular profesional'}</p>
               <p className="mt-3 text-sm text-slate-600 dark:text-slate-200">{preview.summary}</p>
               <dl className="mt-4 grid gap-1 text-sm text-slate-600 dark:text-slate-200">
                 <dd>{preview.personal.email} · {preview.personal.phone}</dd>
@@ -422,7 +490,7 @@ export default function CVPage() {
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {preview.skills.map((skill) => (
-                  <span key={skill} className="rounded-full bg-violet-100 px-3 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-400/10 dark:text-violet-100">{skill}</span>
+                  <span key={skill} className="rounded-full px-3 py-1 text-xs font-semibold" style={{ backgroundColor: accentSoft, color: accent }}>{skill}</span>
                 ))}
               </div>
               {preview.competencies?.length ? (
@@ -444,7 +512,7 @@ export default function CVPage() {
                   {preview.experience.map((item, index) => (
                     <div key={`${item.company}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/80">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.role || 'Cargo'}</p>
-                      <p className="text-xs text-violet-600 dark:text-violet-200">{item.company || 'Empresa'} · {item.period || 'Periodo'}</p>
+                      <p className="text-xs font-semibold" style={{ color: accent }}>{item.company || 'Empresa'} · {item.period || 'Periodo'}</p>
                       <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">{item.description || 'Descripción breve de tu experiencia.'}</p>
                     </div>
                   ))}
@@ -457,7 +525,7 @@ export default function CVPage() {
                   {preview.education.map((item, index) => (
                     <div key={`${item.degree}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/80">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.degree || 'Título'}</p>
-                      <p className="text-xs text-violet-600 dark:text-violet-200">{item.institution || 'Institución'} · {item.period || 'Periodo'}</p>
+                      <p className="text-xs font-semibold" style={{ color: accent }}>{item.institution || 'Institución'} · {item.period || 'Periodo'}</p>
                       <p className="mt-2 text-sm text-slate-600 dark:text-slate-200">{item.details || 'Detalles de tu formación.'}</p>
                     </div>
                   ))}
@@ -472,7 +540,7 @@ export default function CVPage() {
                       <div key={`${item.name}-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-slate-900/80">
                         <div className="flex items-baseline justify-between gap-3">
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{item.name || 'Proyecto'}</p>
-                          {item.period ? <span className="text-xs text-violet-600 dark:text-violet-200">{item.period}</span> : null}
+                          {item.period ? <span className="text-xs font-semibold" style={{ color: accent }}>{item.period}</span> : null}
                         </div>
                         {item.link ? (
                           <a href={normalizeUrl(item.link)} target="_blank" rel="noreferrer" className="text-xs font-semibold text-sky-600 hover:underline dark:text-sky-300">{item.link}</a>
@@ -484,6 +552,12 @@ export default function CVPage() {
                 </article>
               ) : null}
             </div>
+
+            {/* Marca de agua: sitio donde se creó el CV */}
+            <footer className="mt-5 flex items-center justify-center gap-2 border-t border-slate-200 pt-3 text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-slate-400 dark:border-white/10 dark:text-slate-500">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: accent }} />
+              Creado con <span style={{ color: accent }}>ReviJob</span>
+            </footer>
           </motion.div>
 
           <AnimatePresence>

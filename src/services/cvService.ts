@@ -15,6 +15,7 @@ export interface CVService {
 const STORAGE_KEY = 'revijob-cv'
 const VERSIONS_KEY = 'revijob-cv-versions'
 const MAX_VERSIONS = 30
+const DEFAULT_ACCENT = '#7c3aed'
 
 function createId(): string {
   return `cv-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
@@ -72,6 +73,7 @@ function defaultDraft(): CVDraft {
         description: 'Librería de componentes accesibles y tokens de diseño usada por todo el producto.',
       },
     ],
+    accentColor: DEFAULT_ACCENT,
   }
 }
 
@@ -95,6 +97,7 @@ function seedData(): CVDocument {
     experience: draft.experience,
     education: draft.education,
     projects: draft.projects,
+    accentColor: draft.accentColor,
     updatedAt: new Date().toISOString(),
   }
 }
@@ -111,7 +114,9 @@ class LocalStorageCVService implements CVService {
     }
 
     try {
-      return JSON.parse(raw) as CVDocument
+      const parsed = JSON.parse(raw) as CVDocument
+      // Compatibilidad con CVs guardados antes del color de énfasis.
+      return { ...parsed, accentColor: parsed.accentColor || DEFAULT_ACCENT }
     } catch {
       const fallback = seedData()
       localStorage.setItem(this.storageKey, JSON.stringify(fallback))
@@ -168,6 +173,7 @@ class LocalStorageCVService implements CVService {
         link: item.link.trim(),
         description: item.description.trim(),
       })),
+      accentColor: data.accentColor || current.accentColor || DEFAULT_ACCENT,
       updatedAt: new Date().toISOString(),
     }
 
