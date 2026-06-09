@@ -1,6 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useRef, useState } from 'react'
-import type { ChangeEvent } from 'react'
+import { useState } from 'react'
 import type { CVDocument, CVDraft, CVExperienceItem, CVEducationItem, CVProjectItem, CVOtherItem, CVVersion } from '../types/cv'
 import { cvService } from '../services/cvService'
 import { downloadCvAsPdf, normalizeUrl } from '../utils/cvPdf'
@@ -63,7 +62,6 @@ const documentToDraft = (doc: CVDocument): CVDraft => ({
 })
 
 export default function CVPage() {
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [preview, setPreview] = useState(() => cvService.get())
   const [draft, setDraft] = useState<CVDraft>(() => documentToDraft(cvService.get()))
   const [savedAt, setSavedAt] = useState('')
@@ -156,20 +154,6 @@ export default function CVPage() {
     setVersions(cvService.deleteVersion(version.id))
   }
 
-  const handlePdfUpload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
-    try {
-      const updated = await cvService.uploadPdf(file)
-      setPreview(updated)
-      setSavedAt(new Date(updated.updatedAt).toLocaleString())
-    } catch (error) {
-      console.error(error)
-      alert('No se pudo adjuntar el PDF.')
-    } finally {
-      event.target.value = ''
-    }
-  }
 
   const handleClearPdf = () => {
     const updated = cvService.clearPdf()
